@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """Этап 1 пайплайна (DVC): загрузка, очистка, валидация и feature engineering."""
+
 import argparse
 import os
 import sys
 
 import pandas as pd
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
-from src.features.build_features import add_features
-from src.data.validation import validate_input
+from src.data.validation import validate_input  # noqa: E402
+from src.features.build_features import add_features  # noqa: E402
 
 
 def load_raw(raw_path: str) -> pd.DataFrame:
@@ -44,7 +47,9 @@ def prepare(raw_path: str, out_path: str) -> pd.DataFrame:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Этап prepare: загрузка, очистка, валидация, признаки")
+    parser = argparse.ArgumentParser(
+        description="Этап prepare: загрузка, очистка, валидация, признаки"
+    )
     parser.add_argument("--raw", default="data/raw/default of credit card clients.xls")
     parser.add_argument("--out", default="data/processed/processed.csv")
     args = parser.parse_args()
