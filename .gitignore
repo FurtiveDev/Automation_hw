@@ -33,3 +33,5 @@ mlartifacts/
 .DS_Store
 .env
 *.log
+mlflow.db
+payload.json
