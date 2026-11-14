@@ -5,37 +5,16 @@
 допустимые диапазоны значений. При нарушениях схема выбрасывает
 SchemaError - тесты и пайплайн падают на аномальных данных.
 """
-
+import pandas as pd
 import pandera.pandas as pa
 from pandera.errors import SchemaError, SchemaErrors
-import pandas as pd
 
-RAW_COLUMNS = [
-    "LIMIT_BAL",
-    "SEX",
-    "EDUCATION",
-    "MARRIAGE",
-    "AGE",
-    "PAY_0",
-    "PAY_2",
-    "PAY_3",
-    "PAY_4",
-    "PAY_5",
-    "PAY_6",
-    "BILL_AMT1",
-    "BILL_AMT2",
-    "BILL_AMT3",
-    "BILL_AMT4",
-    "BILL_AMT5",
-    "BILL_AMT6",
-    "PAY_AMT1",
-    "PAY_AMT2",
-    "PAY_AMT3",
-    "PAY_AMT4",
-    "PAY_AMT5",
-    "PAY_AMT6",
-    "default",
-]
+from src.features.build_features import (  # noqa: E402
+    BILL_COLS,
+    PAY_AMT_COLS,
+    PAY_COLS,
+    add_features,
+)
 
 raw_schema = pa.DataFrameSchema(
     {
@@ -44,13 +23,19 @@ raw_schema = pa.DataFrameSchema(
         "EDUCATION": pa.Column(int, pa.Check.isin([1, 2, 3, 4]), nullable=False),
         "MARRIAGE": pa.Column(int, pa.Check.isin([1, 2, 3]), nullable=False),
         "AGE": pa.Column(int, pa.Check.in_range(21, 79), nullable=False),
-        "PAY_0": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
-        "PAY_2": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
-        "PAY_3": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
-        "PAY_4": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
-        "PAY_5": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
-        "PAY_6": pa.Column(int, pa.Check.in_range(-2, 9), nullable=False),
         "default": pa.Column(int, pa.Check.isin([0, 1]), nullable=False),
+    }
+    | {
+        col: pa.Column(int, pa.Check.in_range(-2, 9), nullable=False)
+        for col in PAY_COLS
+    }
+    | {
+        col: pa.Column(float, pa.Check.ge(0), nullable=False, coerce=True)
+        for col in PAY_AMT_COLS
+    }
+    | {
+        col: pa.Column(float, nullable=False, coerce=True)
+        for col in BILL_COLS
     },
     strict=False,
 )

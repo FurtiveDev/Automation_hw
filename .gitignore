@@ -19,7 +19,6 @@ data/processed/*
 
 # Модели и артефакты (версионируются через DVC)
 models/*.joblib
-models/metrics.json
 models/roc_curve.png
 
 # MLflow

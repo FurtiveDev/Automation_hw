@@ -66,6 +66,13 @@ def test_bad_education_fails():
         validate_input(df)
 
 
+def test_pay_amt_negative_fails():
+    df = valid_df()
+    df.loc[0, "PAY_AMT1"] = -500
+    with pytest.raises((SchemaError, SchemaErrors)):
+        validate_input(df)
+
+
 def test_pay_out_of_range_fails():
     df = valid_df()
     df.loc[0, "PAY_0"] = 99
