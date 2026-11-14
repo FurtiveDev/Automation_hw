@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Virtualenv
+.venv/
+venv/
+
+# Данные (версионируются через DVC)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Модели и артефакты (версионируются через DVC)
+models/*.joblib
+models/metrics.json
+models/roc_curve.png
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# DVC cache
+.dvc/cache/
+.dvc/tmp/
+
+# Прочее
+.DS_Store
+.env
+*.log

@@ -1,0 +1,33 @@
+name: CI
+
+on: [push, workflow_dispatch]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (flake8)
+        run: flake8 src tests
+
+      - name: Format check (black)
+        run: black --check src tests
+
+      - name: Data validation (pandera)
+        run: pytest tests/test_validation.py -v
+
+      - name: Unit tests
+        run: pytest tests -v
+
+      - name: Data validation step (pandera demo)
+        run: python -m src.data.validation

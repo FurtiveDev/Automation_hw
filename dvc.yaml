@@ -1,0 +1,21 @@
+stages:
+  prepare:
+    cmd: python src/data/prepare.py --raw "data/raw/default of credit card clients.xls" --out data/processed/processed.csv
+    deps:
+      - data/raw/default of credit card clients.xls
+      - src/data/prepare.py
+      - src/features/build_features.py
+      - src/data/validation.py
+    outs:
+      - data/processed/processed.csv
+  train:
+    cmd: python src/models/train.py --data data/processed/processed.csv --models-dir models
+    deps:
+      - data/processed/processed.csv
+      - src/models/train.py
+      - src/features/build_features.py
+    outs:
+      - models/model.joblib
+    metrics:
+      - models/metrics.json:
+          cache: false
