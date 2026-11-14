@@ -13,6 +13,7 @@ venv/
 # Данные (версионируются через DVC)
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/*.dvc
 data/processed/*
 !data/processed/.gitkeep
 
