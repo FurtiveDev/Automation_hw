@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Unit-тесты feature engineering на синтетических данных."""
+
 import pandas as pd
 import pytest
 
@@ -39,8 +40,15 @@ def raw_df():
 
 def test_add_features_columns(raw_df):
     out = add_features(raw_df)
-    for col in ["pay_mean_delay", "pay_max_delay", "pay_late_count",
-                "bill_total", "pay_total", "pay_to_bill_ratio", "age_group"]:
+    for col in [
+        "pay_mean_delay",
+        "pay_max_delay",
+        "pay_late_count",
+        "bill_total",
+        "pay_total",
+        "pay_to_bill_ratio",
+        "age_group",
+    ]:
         assert col in out.columns
 
 

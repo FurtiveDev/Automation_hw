@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """FastAPI сервис скоринга PD-модели: POST /predict принимает JSON с признаками клиента."""
+
 import os
 import sys
 
-import joblib
-import numpy as np
-import pandas as pd
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+import joblib  # noqa: E402
+import pandas as pd  # noqa: E402
+from fastapi import FastAPI, HTTPException  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
-from src.features.build_features import add_features
+from src.features.build_features import add_features  # noqa: E402
 
 MODEL_PATH = os.path.join("models", "model.joblib")
 
@@ -69,7 +71,9 @@ def health():
 @app.post("/predict")
 def predict(client: ClientFeatures):
     if pipeline is None:
-        raise HTTPException(status_code=503, detail="Модель не загружена, выполните dvc repro")
+        raise HTTPException(
+            status_code=503, detail="Модель не загружена, выполните dvc repro"
+        )
     raw = pd.DataFrame([client.model_dump()])
     features = add_features(raw)
     proba_default = float(pipeline.predict_proba(features)[0, 1])

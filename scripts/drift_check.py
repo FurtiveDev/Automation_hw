@@ -9,6 +9,7 @@
 с вероятностями на train-данных (эталон). Затем считает PSI по ключевым
 признакам между train и новыми данными.
 """
+
 import argparse
 import json
 import os
@@ -18,9 +19,9 @@ import numpy as np
 import pandas as pd
 import requests
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.features.build_features import add_features
+from src.features.build_features import add_features  # noqa: E402
 
 KEY_FEATURES = ["LIMIT_BAL", "AGE", "pay_mean_delay", "bill_total", "pay_to_bill_ratio"]
 
@@ -36,25 +37,37 @@ def psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> float:
     return float(np.sum((a_dist - e_dist) * np.log(a_dist / e_dist)))
 
 
-def psi_report(reference_df: pd.DataFrame, new_df: pd.DataFrame, features: list) -> pd.DataFrame:
+def psi_report(
+    reference_df: pd.DataFrame, new_df: pd.DataFrame, features: list
+) -> pd.DataFrame:
     rows = []
     for feature in features:
-        value = psi(reference_df[feature].dropna().values, new_df[feature].dropna().values)
-        level = "нет дрифта" if value < 0.1 else ("умеренный" if value < 0.25 else "сильный")
+        value = psi(
+            reference_df[feature].dropna().values, new_df[feature].dropna().values
+        )
+        level = (
+            "нет дрифта"
+            if value < 0.1
+            else ("умеренный" if value < 0.25 else "сильный")
+        )
         rows.append({"feature": feature, "psi": round(value, 4), "уровень": level})
     return pd.DataFrame(rows)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Скрипт мониторинга дрифта данных (PSI)")
+    parser = argparse.ArgumentParser(
+        description="Скрипт мониторинга дрифта данных (PSI)"
+    )
     parser.add_argument("--api", default="http://localhost:8000")
     parser.add_argument("--data", default="data/processed/processed.csv")
-    parser.add_argument("--n", type=int, default=200, help="сколько новых строк отправить в API")
+    parser.add_argument(
+        "--n", type=int, default=200, help="сколько новых строк отправить в API"
+    )
     args = parser.parse_args()
 
     df = pd.read_csv(args.data)
     train_df = df.iloc[: int(len(df) * 0.8)]
-    new_df = df.iloc[-args.n:].reset_index(drop=True)
+    new_df = df.iloc[-args.n :].reset_index(drop=True)
     new_df_fe = add_features(new_df)
 
     # Эталон: вероятности дефолта на train через обученную модель
@@ -67,16 +80,26 @@ def main():
     print(f"Отправляю {len(new_df)} строк в {args.api}/predict ...")
     api_proba = []
     for _, row in new_df_fe.iterrows():
-        payload = {col: (float(v) if isinstance(v, (int, float, np.floating)) else v)
-                   for col, v in row.items() if col in pd.read_csv(args.data, nrows=0).columns}
+        payload = {
+            col: (float(v) if isinstance(v, (int, float, np.floating)) else v)
+            for col, v in row.items()
+            if col in pd.read_csv(args.data, nrows=0).columns
+        }
         resp = requests.post(f"{args.api}/predict", json=payload, timeout=30)
         resp.raise_for_status()
         data = resp.json()
-        api_proba.append(data["probability"] if "probability" in data else 1 - data["probability_no_default"])
+        api_proba.append(
+            data["probability"]
+            if "probability" in data
+            else 1 - data["probability_no_default"]
+        )
     api_proba = np.array(api_proba)
 
-    report = psi_report(train_df.assign(probability=ref_proba), new_df.assign(probability=api_proba),
-                        KEY_FEATURES + ["probability"])
+    report = psi_report(
+        train_df.assign(probability=ref_proba),
+        new_df.assign(probability=api_proba),
+        KEY_FEATURES + ["probability"],
+    )
     print(report.to_string(index=False))
     print("\nПороги PSI: < 0.1 нет дрифта, 0.1-0.25 умеренный, > 0.25 сильный")
 
