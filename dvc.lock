@@ -1,0 +1,58 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python src/data/prepare.py --raw "data/raw/default of credit card 
+      clients.xls" --out data/processed/processed.csv
+    deps:
+    - path: data/raw/default of credit card clients.xls
+      hash: md5
+      md5: 25a64500f543274fd6c9db905bfeb968
+      size: 5539328
+      isexec: true
+    - path: src/data/prepare.py
+      hash: md5
+      md5: 2d1172a6db6c70566bfe6163636a1476
+      size: 2235
+      isexec: true
+    - path: src/data/validation.py
+      hash: md5
+      md5: 3e6271c4b1b76d3125132727df4caba3
+      size: 3474
+      isexec: true
+    - path: src/features/build_features.py
+      hash: md5
+      md5: 17865ed4fa21e10732078d6ac45cc1a2
+      size: 1363
+      isexec: true
+    outs:
+    - path: data/processed/processed.csv
+      hash: md5
+      md5: d9c38727440cad124f7a3f88a9bff4f6
+      size: 4227428
+  train:
+    cmd: python src/models/train.py --data data/processed/processed.csv 
+      --models-dir models
+    deps:
+    - path: data/processed/processed.csv
+      hash: md5
+      md5: d9c38727440cad124f7a3f88a9bff4f6
+      size: 4227428
+    - path: src/features/build_features.py
+      hash: md5
+      md5: 17865ed4fa21e10732078d6ac45cc1a2
+      size: 1363
+      isexec: true
+    - path: src/models/train.py
+      hash: md5
+      md5: 61177343ba87004d0461168e8d0b2786
+      size: 8234
+      isexec: true
+    outs:
+    - path: models/metrics.json
+      hash: md5
+      md5: 65389688b004aa56a8424f2fcec21a72
+      size: 1415
+    - path: models/model.joblib
+      hash: md5
+      md5: 4459b51c4b0565763e40f701c46b69c3
+      size: 145421
