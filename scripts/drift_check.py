@@ -76,7 +76,7 @@ def main():
     pipeline = joblib.load(os.path.join("models", "model.joblib"))
     ref_proba = pipeline.predict_proba(train_df.drop(columns=["default"]))[:, 1]
 
-    # Отправляем новые данные в API и собираем вероятности дефолта
+    # Отправляю новые данные в API и собираю вероятности дефолта
     print(f"Отправляю {len(new_df)} строк в {args.api}/predict ...")
     api_proba = []
     for _, row in new_df_fe.iterrows():

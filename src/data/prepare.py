@@ -22,7 +22,7 @@ def load_raw(raw_path: str) -> pd.DataFrame:
     df["LIMIT_BAL"] = df["LIMIT_BAL"].astype(float)
     df = df.drop(columns=["ID"])
 
-    # Приводим категории к справочным значениям из описания датасета
+    # Привожу категории к справочным значениям из описания датасета
     df["EDUCATION"] = df["EDUCATION"].replace({0: 4, 5: 4, 6: 4})
     df["MARRIAGE"] = df["MARRIAGE"].replace({0: 3})
 
