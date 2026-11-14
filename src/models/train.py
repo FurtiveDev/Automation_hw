@@ -1,71 +1,127 @@
 # -*- coding: utf-8 -*-
 """Этап 2 пайплайна (DVC): обучение моделей, MLflow-эксперименты, сохранение лучшей модели."""
+
 import argparse
 import json
-import math
 import os
 import sys
 
-import joblib
-import matplotlib
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+
+import joblib  # noqa: E402
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import mlflow
-import mlflow.sklearn
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score, roc_curve
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
+import matplotlib.pyplot as plt  # noqa: E402
+import mlflow  # noqa: E402
+import mlflow.sklearn  # noqa: E402
+import pandas as pd  # noqa: E402
+from sklearn.compose import ColumnTransformer  # noqa: E402
+from sklearn.ensemble import (  # noqa: E402
+    GradientBoostingClassifier,  # noqa: E402
+    RandomForestClassifier,  # noqa: E402
+)
+from sklearn.impute import SimpleImputer  # noqa: E402
+from sklearn.linear_model import LogisticRegression  # noqa: E402
+from sklearn.metrics import (  # noqa: E402
+    precision_recall_fscore_support,  # noqa: E402
+    roc_auc_score,  # noqa: E402
+    roc_curve,  # noqa: E402
+)
+from sklearn.model_selection import GridSearchCV, train_test_split  # noqa: E402
+from sklearn.pipeline import Pipeline  # noqa: E402
+from sklearn.preprocessing import OneHotEncoder, StandardScaler  # noqa: E402
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from src.features.build_features import add_features
+from src.features.build_features import add_features  # noqa: E402
 
 TARGET = "default"
 RANDOM_STATE = 42
 
 NUMERIC_FEATURES = [
-    "LIMIT_BAL", "AGE", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6",
-    "BILL_AMT1", "BILL_AMT2", "BILL_AMT3", "BILL_AMT4", "BILL_AMT5", "BILL_AMT6",
-    "PAY_AMT1", "PAY_AMT2", "PAY_AMT3", "PAY_AMT4", "PAY_AMT5", "PAY_AMT6",
-    "pay_mean_delay", "pay_max_delay", "pay_late_count",
-    "bill_total", "pay_total", "pay_to_bill_ratio",
+    "LIMIT_BAL",
+    "AGE",
+    "PAY_0",
+    "PAY_2",
+    "PAY_3",
+    "PAY_4",
+    "PAY_5",
+    "PAY_6",
+    "BILL_AMT1",
+    "BILL_AMT2",
+    "BILL_AMT3",
+    "BILL_AMT4",
+    "BILL_AMT5",
+    "BILL_AMT6",
+    "PAY_AMT1",
+    "PAY_AMT2",
+    "PAY_AMT3",
+    "PAY_AMT4",
+    "PAY_AMT5",
+    "PAY_AMT6",
+    "pay_mean_delay",
+    "pay_max_delay",
+    "pay_late_count",
+    "bill_total",
+    "pay_total",
+    "pay_to_bill_ratio",
 ]
 CATEGORICAL_FEATURES = ["SEX", "EDUCATION", "MARRIAGE", "age_group"]
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
 EXPERIMENTS = [
-    ("logreg_c0.1", LogisticRegression(C=0.1, max_iter=2000, random_state=RANDOM_STATE),
-     {"model__C": [0.05, 0.1, 0.5]}),
-    ("logreg_c1.0", LogisticRegression(C=1.0, max_iter=2000, random_state=RANDOM_STATE),
-     {"model__C": [1.0, 2.0, 5.0]}),
-    ("random_forest_200", RandomForestClassifier(n_estimators=200, random_state=RANDOM_STATE),
-     {"model__max_depth": [8, 12, None]}),
-    ("random_forest_300", RandomForestClassifier(n_estimators=300, random_state=RANDOM_STATE),
-     {"model__max_depth": [10, 16]}),
-    ("gradient_boosting", GradientBoostingClassifier(random_state=RANDOM_STATE),
-     {"model__n_estimators": [100, 200], "model__learning_rate": [0.05, 0.1]}),
+    (
+        "logreg_c0.1",
+        LogisticRegression(C=0.1, max_iter=2000, random_state=RANDOM_STATE),
+        {"model__C": [0.05, 0.1, 0.5]},
+    ),
+    (
+        "logreg_c1.0",
+        LogisticRegression(C=1.0, max_iter=2000, random_state=RANDOM_STATE),
+        {"model__C": [1.0, 2.0, 5.0]},
+    ),
+    (
+        "random_forest_200",
+        RandomForestClassifier(n_estimators=200, random_state=RANDOM_STATE),
+        {"model__max_depth": [8, 12, None]},
+    ),
+    (
+        "random_forest_300",
+        RandomForestClassifier(n_estimators=300, random_state=RANDOM_STATE),
+        {"model__max_depth": [10, 16]},
+    ),
+    (
+        "gradient_boosting",
+        GradientBoostingClassifier(random_state=RANDOM_STATE),
+        {"model__n_estimators": [100, 200], "model__learning_rate": [0.05, 0.1]},
+    ),
 ]
 
 
 def make_preprocessor():
     return ColumnTransformer(
         transformers=[
-            ("num", Pipeline([
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler()),
-            ]), NUMERIC_FEATURES),
-            ("cat", Pipeline([
-                ("imputer", SimpleImputer(strategy="most_frequent")),
-                ("ohe", OneHotEncoder(handle_unknown="ignore")),
-            ]), CATEGORICAL_FEATURES),
+            (
+                "num",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="median")),
+                        ("scaler", StandardScaler()),
+                    ]
+                ),
+                NUMERIC_FEATURES,
+            ),
+            (
+                "cat",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="most_frequent")),
+                        ("ohe", OneHotEncoder(handle_unknown="ignore")),
+                    ]
+                ),
+                CATEGORICAL_FEATURES,
+            ),
         ]
     )
 
@@ -94,7 +150,9 @@ def roc_artifact(y_true, proba, path: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Этап train: обучение, подбор гиперпараметров, MLflow")
+    parser = argparse.ArgumentParser(
+        description="Этап train: обучение, подбор гиперпараметров, MLflow"
+    )
     parser.add_argument("--data", default="data/processed/processed.csv")
     parser.add_argument("--models-dir", default="models")
     args = parser.parse_args()
@@ -106,7 +164,9 @@ def main():
     print(f"Train: {X_train.shape}, Test: {X_test.shape}")
 
     mlflow.set_experiment("pd-default-scoring")
-    mlflow.sklearn.autolog(disable=True)  # логирую вручную, чтобы контролировать содержимое
+    mlflow.sklearn.autolog(
+        disable=True
+    )  # логирую вручную, чтобы контролировать содержимое
 
     results = {}
     best = {"roc_auc": -1.0, "pipeline": None, "name": None, "params": None}
@@ -127,22 +187,40 @@ def main():
             )
 
             mlflow.log_params({**search.best_params_, "model_type": name})
-            mlflow.log_metrics({"roc_auc": roc_auc, "precision": precision,
-                                "recall": recall, "f1": f1})
+            mlflow.log_metrics(
+                {"roc_auc": roc_auc, "precision": precision, "recall": recall, "f1": f1}
+            )
 
             roc_path = os.path.join(args.models_dir, f"roc_{name}.png")
             roc_artifact(y_test, proba, roc_path)
             mlflow.log_artifact(roc_path)
-            mlflow.sklearn.log_model(best_est, artifact_path="model")
+            mlflow.sklearn.log_model(
+                best_est,
+                artifact_path="model",
+                skops_trusted_types=[
+                    "numpy.dtype",
+                    "sklearn.tree._tree.Tree",
+                    "sklearn.utils._param_validation.Interval",
+                    "sklearn.utils._param_validation.StrOptions",
+                ],
+            )
 
-            results[name] = {"roc_auc": roc_auc, "precision": precision,
-                             "recall": recall, "f1": f1,
-                             "best_params": search.best_params_}
+            results[name] = {
+                "roc_auc": roc_auc,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1,
+                "best_params": search.best_params_,
+            }
             print(f"{name}: ROC-AUC {roc_auc:.4f}, F1 {f1:.4f}")
 
             if roc_auc > best["roc_auc"]:
-                best = {"roc_auc": roc_auc, "pipeline": best_est,
-                        "name": name, "params": search.best_params_}
+                best = {
+                    "roc_auc": roc_auc,
+                    "pipeline": best_est,
+                    "name": name,
+                    "params": search.best_params_,
+                }
 
     # Сохранение лучшей модели и метрик
     os.makedirs(args.models_dir, exist_ok=True)
