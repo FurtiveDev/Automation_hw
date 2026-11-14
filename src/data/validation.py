@@ -5,6 +5,7 @@
 допустимые диапазоны значений. При нарушениях схема выбрасывает
 SchemaError - тесты и пайплайн падают на аномальных данных.
 """
+
 import pandas as pd
 import pandera.pandas as pa
 from pandera.errors import SchemaError, SchemaErrors
@@ -33,10 +34,7 @@ raw_schema = pa.DataFrameSchema(
         col: pa.Column(float, pa.Check.ge(0), nullable=False, coerce=True)
         for col in PAY_AMT_COLS
     }
-    | {
-        col: pa.Column(float, nullable=False, coerce=True)
-        for col in BILL_COLS
-    },
+    | {col: pa.Column(float, nullable=False, coerce=True) for col in BILL_COLS},
     strict=False,
 )
 
