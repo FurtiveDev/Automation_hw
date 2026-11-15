@@ -1,5 +1,7 @@
 # PD Scoring Pipeline
 
+[![CI](https://github.com/FurtiveDev/Automation_hw/actions/workflows/ci.yml/badge.svg)](https://github.com/FurtiveDev/Automation_hw/actions/workflows/ci.yml)
+
 Итоговый проект по дисциплине "Автоматизация процессов разработки и тестирования моделей машинного обучения".
 
 Сквозной автоматизированный пайплайн для скоринговой модели предсказания вероятности дефолта клиента (PD-модель) на датасете [Default of Credit Card Clients (UCI)](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients).
